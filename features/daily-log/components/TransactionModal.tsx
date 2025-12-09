@@ -55,11 +55,19 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   const isIncome = type === TransactionType.INCOME;
   const isEditing = !!initialData;
+  const titleId = "transaction-modal-title";
+  const descId = "transaction-modal-desc";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      aria-describedby={descId}
+    >
       {/* Backdrop tap to close */}
-      <div className="absolute inset-0" onClick={onClose} />
+      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
       
       <div className="bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-300 relative z-10 flex flex-col max-h-[90vh]">
         
@@ -70,16 +78,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
         <div className="px-6 py-4 flex justify-between items-center">
           <div>
-            <h3 className="text-2xl font-bold text-slate-800">
+            <h3 id={titleId} className="text-2xl font-bold text-slate-800">
               {isEditing ? 'تعديل الحركة' : (isIncome ? 'إضافة وارد' : 'إضافة مصروف')}
             </h3>
-            <p className="text-slate-500 text-sm font-medium">
+            <p id={descId} className="text-slate-500 text-sm font-medium">
                {isEditing ? 'تعديل بيانات الحركة المسجلة' : (isIncome ? 'تسجيل مبلغ تم تحصيله' : 'تسجيل مبلغ تم صرفه')}
             </p>
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400"
+            aria-label="إغلاق النافذة"
           >
             <X size={20} className="text-slate-600" />
           </button>
@@ -88,11 +97,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 pt-2 space-y-6 overflow-y-auto custom-scrollbar">
           
           {/* Toggle Type */}
-          <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 rounded-2xl">
+          <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 rounded-2xl" role="group" aria-label="نوع الحركة">
             <button
               type="button"
               onClick={() => setType(TransactionType.INCOME)}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${
+              aria-pressed={isIncome}
+              className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                 isIncome 
                   ? 'bg-white text-emerald-600 shadow-sm' 
                   : 'text-slate-500 hover:text-slate-700'
@@ -104,7 +114,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             <button
               type="button"
               onClick={() => setType(TransactionType.EXPENSE)}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${
+              aria-pressed={!isIncome}
+              className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
                 !isIncome 
                   ? 'bg-white text-red-600 shadow-sm' 
                   : 'text-slate-500 hover:text-slate-700'
@@ -119,9 +130,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
              {/* Amount Input */}
              <div className="relative">
                 <div className="absolute top-4 right-4 pointer-events-none">
-                    <span className="text-xs font-bold text-slate-400">المبلغ</span>
+                    <label htmlFor="amount-input" className="text-xs font-bold text-slate-400">المبلغ</label>
                 </div>
                 <input
+                  id="amount-input"
                   ref={inputRef}
                   type="number"
                   required
@@ -136,12 +148,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       : 'border-red-100 focus:border-red-500 bg-red-50/30 text-red-900'
                   }`}
                 />
-                <span className={`absolute left-4 bottom-5 font-bold text-lg ${isIncome ? 'text-emerald-300' : 'text-red-300'}`}>ج.م</span>
+                <span className={`absolute left-4 bottom-5 font-bold text-lg ${isIncome ? 'text-emerald-300' : 'text-red-300'}`} aria-hidden="true">ج.م</span>
              </div>
 
              {/* Client Name Input */}
              <div className="relative">
                 <input
+                  id="client-name-input"
                   type="text"
                   required
                   value={clientName}
@@ -149,7 +162,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   placeholder=" "
                   className="peer w-full px-4 pt-6 pb-2 rounded-2xl border-2 border-slate-200 focus:border-slate-800 outline-none text-lg font-bold bg-white text-slate-800 transition-all"
                 />
-                <label className="absolute top-4 right-4 text-slate-400 text-sm font-bold transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-slate-500 peer-[&:not(:placeholder-shown)]:top-1.5 peer-[&:not(:placeholder-shown)]:text-xs peer-[&:not(:placeholder-shown)]:text-slate-500 pointer-events-none">
+                <label 
+                  htmlFor="client-name-input"
+                  className="absolute top-4 right-4 text-slate-400 text-sm font-bold transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-slate-500 peer-[&:not(:placeholder-shown)]:top-1.5 peer-[&:not(:placeholder-shown)]:text-xs peer-[&:not(:placeholder-shown)]:text-slate-500 pointer-events-none"
+                >
                    وصف الحركة / اسم العميل
                 </label>
              </div>
