@@ -1,23 +1,23 @@
 export enum TransactionType {
-  INCOME = 'INCOME',
-  EXPENSE = 'EXPENSE'
+  INCOME = 'income',
+  EXPENSE = 'expense'
 }
 
 export interface Transaction {
-  id: string;
-  clientName: string; // اسم العميل or Description
+  id: string; // We convert backend number ID to string for frontend consistency
+  clientName: string; // Mapped from backend 'description'
   amount: number;
   type: TransactionType;
   timestamp: number;
 }
 
 export enum DayStatus {
-  OPEN = 'OPEN',
-  CLOSED = 'CLOSED'
+  OPEN = 'open',
+  CLOSED = 'closed'
 }
 
 export interface DailyLog {
-  id: string; // ISO Date string YYYY-MM-DD
+  id: string; // YYYY-MM-DD
   driverId: string;
   date: number; // timestamp
   status: DayStatus;
@@ -26,11 +26,13 @@ export interface DailyLog {
 }
 
 export interface Driver {
-  mobile: string;
-  name: string;
+  id?: number;
+  mobile: string; // mapped from mobilePhone
+  name: string; // mapped from fullName
+  token?: string;
 }
 
 export interface AppState {
   currentUser: Driver | null;
-  currentDayId: string | null; // ID of the currently viewed day
+  currentDayId: string | null;
 }

@@ -6,12 +6,11 @@ import { TransactionModal } from './components/TransactionModal';
 import { DaySettingsModal } from './components/DaySettingsModal';
 import { ReportModal } from './components/ReportModal';
 import { PrintView } from './components/PrintView';
-import { TransactionActionModal } from './components/TransactionActionModal';
 import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
 import { IncomeExpenseChart } from '../../components/ui/IncomeExpenseChart';
 import { 
   ChevronLeft, Lock, Settings, FileText, ArrowUp, ArrowDown, Share2, Wallet,
-  ArrowUpDown, Filter, Search, X, Clock, Timer, AlertCircle
+  ArrowUpDown, Filter, Search, X, Clock, Timer
 } from 'lucide-react';
 
 interface ConfirmConfig {
@@ -24,12 +23,11 @@ interface ConfirmConfig {
 }
 
 export const DailyLogScreen: React.FC = () => {
-  const { currentLog, driver, selectDay, addTransaction, deleteTransaction, updateTransaction, closeDay } = useApp();
+  const { currentLog, driver, selectDay, addTransaction, closeDay } = useApp();
 
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [isActionOpen, setIsActionOpen] = useState(false);
   
   // Confirmation Modal State
   const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig>({
@@ -41,9 +39,7 @@ export const DailyLogScreen: React.FC = () => {
   });
   
   const [txType, setTxType] = useState(TransactionType.INCOME);
-  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-
+  
   // Filter & Sort State
   const [filterType, setFilterType] = useState<'ALL' | TransactionType>('ALL');
   const [sortBy, setSortBy] = useState<'TIME' | 'AMOUNT'>('TIME');
@@ -61,7 +57,6 @@ export const DailyLogScreen: React.FC = () => {
     // Parse ID YYYY-MM-DD
     const [year, month, day] = currentLog.id.split('-').map(Number);
     // Construct start date at 4:00 AM
-    // Note: We assume local device time generally matches user location (Egypt).
     const start = new Date(year, month - 1, day, 4, 0, 0);
     const end = new Date(start.getTime() + 24 * 60 * 60 * 1000); // Add 24 hours
     
@@ -149,13 +144,11 @@ export const DailyLogScreen: React.FC = () => {
 
   if (!currentLog || !driver) return null;
 
-  const getDaySummary = () => {
+  const summary = (() => {
     const income = currentLog.transactions.filter(t => t.type === TransactionType.INCOME).reduce((sum, t) => sum + t.amount, 0);
     const expense = currentLog.transactions.filter(t => t.type === TransactionType.EXPENSE).reduce((sum, t) => sum + t.amount, 0);
     return { income, expense, net: income - expense };
-  };
-
-  const summary = getDaySummary();
+  })();
 
   const handleCloseDayConfirm = async () => {
     setConfirmConfig({
@@ -172,50 +165,12 @@ export const DailyLogScreen: React.FC = () => {
 
   // Transaction Actions
   const handleTxSubmit = async (clientName: string, amount: number, type: TransactionType) => {
-    if (editingTx) {
-      await updateTransaction(editingTx.id, clientName, amount, type);
-    } else {
-      await addTransaction(clientName, amount, type);
-    }
-    setEditingTx(null);
-  };
-
-  const handleEditClick = () => {
-    if (selectedTx) {
-      setEditingTx(selectedTx);
-      setIsTxModalOpen(true);
-    }
-  };
-
-  const handleDeleteClick = () => {
-    // Wait for action modal to close smoothly before opening confirm
-    setTimeout(() => {
-      setConfirmConfig({
-        isOpen: true,
-        title: 'حذف الحركة',
-        message: 'هل أنت متأكد من حذف هذه الحركة؟ لا يمكن التراجع عن هذا الإجراء.',
-        variant: 'danger',
-        confirmText: 'نعم، حذف',
-        onConfirm: async () => {
-          if (selectedTx) {
-            await deleteTransaction(selectedTx.id);
-            setSelectedTx(null);
-          }
-        }
-      });
-    }, 200);
+    await addTransaction(clientName, amount, type);
   };
 
   const openAddModal = (type: TransactionType) => {
-    setEditingTx(null);
     setTxType(type);
     setIsTxModalOpen(true);
-  };
-
-  const handleTransactionClick = (tx: Transaction) => {
-    if (isClosed) return;
-    setSelectedTx(tx);
-    setIsActionOpen(true);
   };
 
   return (
@@ -423,12 +378,9 @@ export const DailyLogScreen: React.FC = () => {
         ) : (
           <div className="space-y-3 pb-8">
             {displayedTransactions.map((tx) => (
-              <button 
+              <div 
                 key={tx.id} 
-                onClick={() => handleTransactionClick(tx)}
-                disabled={isClosed}
-                aria-label={`حركة ${tx.type === TransactionType.INCOME ? 'وارد' : 'مصروف'}: ${tx.clientName}, مبلغ ${tx.amount} جنيه`}
-                className={`w-full bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden text-right focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:opacity-80 disabled:active:scale-100`}
+                className={`w-full bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between transition-all relative overflow-hidden text-right`}
               >
                 <div className="flex items-center gap-4 relative z-10">
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg ${
@@ -451,7 +403,7 @@ export const DailyLogScreen: React.FC = () => {
                     {tx.type === TransactionType.INCOME ? '+' : '-'}
                     {tx.amount.toLocaleString()}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
@@ -502,15 +454,8 @@ export const DailyLogScreen: React.FC = () => {
         isOpen={isTxModalOpen} 
         onClose={() => setIsTxModalOpen(false)} 
         onSubmit={handleTxSubmit}
-        initialType={editingTx ? editingTx.type : txType}
-        initialData={editingTx}
-      />
-
-      <TransactionActionModal
-        isOpen={isActionOpen}
-        onClose={() => setIsActionOpen(false)}
-        onEdit={handleEditClick}
-        onDelete={handleDeleteClick}
+        initialType={txType}
+        initialData={null}
       />
 
       <DaySettingsModal 
