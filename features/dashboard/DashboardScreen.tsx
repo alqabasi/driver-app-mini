@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { DailyLog, DayStatus, TransactionType } from '../../types';
 import { LogOut, Plus, ArrowRight, Download, FileSpreadsheet, AlertTriangle, Bell } from 'lucide-react';
+import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
+import { IncomeExpenseChart } from '../../components/ui/IncomeExpenseChart';
 
 export const DashboardScreen: React.FC = () => {
   const { driver, logs, logout, createDay, selectDay, exportData } = useApp();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const reminder = useMemo(() => {
     if (!logs.length) return null;
@@ -58,10 +61,8 @@ export const DashboardScreen: React.FC = () => {
 
   if (!driver) return null;
 
-  const handleLogout = () => {
-    if(window.confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-      logout();
-    }
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
   };
 
   const getDaySummary = (log: DailyLog) => {
@@ -103,16 +104,21 @@ export const DashboardScreen: React.FC = () => {
         <div className="flex justify-between items-start mb-8">
           <div>
              <span className="text-slate-400 font-bold text-sm mb-1 block">مرحباً بك</span>
-             <h1 className="text-3xl font-black text-slate-900 tracking-tight">كابتن {driver.name.split(' ')[0]} 👋</h1>
+             <h1 className="text-3xl font-black text-slate-900 tracking-tight">استاذ {driver.name.split(' ')[0]} 👋</h1>
           </div>
-          <button onClick={handleLogout} className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-colors">
+          <button 
+            onClick={handleLogoutClick} 
+            className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-colors focus:outline-none focus:ring-4 focus:ring-red-100"
+            aria-label="تسجيل الخروج"
+          >
             <LogOut size={22} />
           </button>
         </div>
 
         <button 
           onClick={createDay}
-          className="w-full bg-slate-900 text-white rounded-[2rem] p-6 shadow-xl shadow-slate-900/20 relative overflow-hidden group active:scale-[0.98] transition-all"
+          className="w-full bg-slate-900 text-white rounded-[2rem] p-6 shadow-xl shadow-slate-900/20 relative overflow-hidden group active:scale-[0.98] transition-all focus:outline-none focus:ring-4 focus:ring-slate-300"
+          aria-label="بدء وردية جديدة"
         >
           <div className="absolute top-0 left-0 w-full h-full bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="flex items-center justify-between relative z-10">
@@ -121,7 +127,7 @@ export const DashboardScreen: React.FC = () => {
                     <Plus size={32} />
                 </div>
                 <div className="text-right">
-                    <span className="block font-bold text-xl mb-1">وردية فتح</span>
+                    <span className="block font-bold text-xl mb-1">فتح ورديه</span>
                     <span className="text-slate-400 text-sm font-medium">ابدأ تسجيل حسابات اليوم</span>
                 </div>
             </div>
@@ -137,7 +143,7 @@ export const DashboardScreen: React.FC = () => {
         <div className="px-6 mb-6 animate-in slide-in-from-top-4 duration-500">
            <button 
              onClick={() => selectDay(reminder.log)}
-             className={`w-full p-4 rounded-[1.5rem] border flex items-center gap-4 text-right shadow-sm active:scale-95 transition-all ${reminder.className}`}
+             className={`w-full p-4 rounded-[1.5rem] border flex items-center gap-4 text-right shadow-sm active:scale-95 transition-all focus:outline-none focus:ring-4 focus:ring-amber-200 ${reminder.className}`}
            >
              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${reminder.iconBg}`}>
                 {reminder.icon}
@@ -154,13 +160,13 @@ export const DashboardScreen: React.FC = () => {
       <div className="px-6 mb-8">
          <h2 className="text-slate-800 font-bold text-lg mb-4">أدوات سريعة</h2>
          <div className="grid grid-cols-2 gap-4">
-             <button onClick={exportData} className="bg-white p-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex items-center gap-3 active:scale-95 transition-all">
+             <button onClick={exportData} className="bg-white p-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex items-center gap-3 active:scale-95 transition-all focus:outline-none focus:ring-4 focus:ring-blue-100">
                 <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
                     <Download size={20} />
                 </div>
                 <span className="font-bold text-sm text-slate-700">نسخ البيانات</span>
              </button>
-             <button onClick={handleExportCSV} className="bg-white p-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex items-center gap-3 active:scale-95 transition-all">
+             <button onClick={handleExportCSV} className="bg-white p-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex items-center gap-3 active:scale-95 transition-all focus:outline-none focus:ring-4 focus:ring-green-100">
                 <div className="p-2.5 bg-green-50 text-green-600 rounded-xl">
                     <FileSpreadsheet size={20} />
                 </div>
@@ -185,16 +191,17 @@ export const DashboardScreen: React.FC = () => {
             </div>
           ) : (
             logs.map(log => {
-               const { net } = getDaySummary(log);
+               const { income, expense, net } = getDaySummary(log);
                const isClosed = log.status === DayStatus.CLOSED;
                
                return (
                 <button 
                   key={log.id}
                   onClick={() => selectDay(log)}
-                  className="w-full bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100 active:scale-[0.98] transition-all text-right group"
+                  className="w-full bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100 active:scale-[0.98] transition-all text-right group focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-100"
+                  aria-label={`يومية ${new Date(log.date).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}, الحالة ${isClosed ? 'مغلقة' : 'مفتوحة'}, الصافي ${net} جنيه`}
                 >
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
                         <span className="block font-black text-slate-800 text-lg mb-1">
                             {new Date(log.date).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -208,15 +215,20 @@ export const DashboardScreen: React.FC = () => {
                     </span>
                   </div>
                   
-                  <div className="flex justify-between items-end border-t border-gray-50 pt-4">
+                  <div className="flex justify-between items-end border-t border-gray-50 pt-3">
                     <div className="text-gray-400 text-xs font-bold">
                        {log.transactions.length} حركة مسجلة
                     </div>
-                    <div>
-                       <span className="text-gray-400 text-xs font-bold ml-2">الصافي</span>
-                       <span className={`font-black text-xl dir-ltr ${net >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
-                         {net.toLocaleString()} <span className="text-xs">ج.م</span>
-                       </span>
+                    
+                    <div className="flex items-center gap-4 pl-1">
+                       <IncomeExpenseChart income={income} expense={expense} height={24} barWidth="w-2" />
+                       
+                       <div className="text-left">
+                          <span className="block text-gray-400 text-[10px] font-bold">الصافي</span>
+                          <span className={`font-black text-xl dir-ltr leading-none ${net >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
+                            {net.toLocaleString()} <span className="text-[10px] text-gray-400 align-top">ج.م</span>
+                          </span>
+                       </div>
                     </div>
                   </div>
                 </button>
@@ -225,6 +237,16 @@ export const DashboardScreen: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={logout}
+        title="تسجيل الخروج"
+        message="هل أنت متأكد أنك تريد تسجيل الخروج؟ ستحتاج لإدخال بياناتك مرة أخرى للدخول."
+        confirmText="خروج"
+        variant="danger"
+      />
     </div>
   );
 };

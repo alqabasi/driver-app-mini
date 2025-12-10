@@ -93,14 +93,23 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div 
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+        role="dialog"
+        aria-modal="true"
+        aria-label="تصدير التقرير"
+    >
       <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <FileText className="text-blue-600" />
+            <FileText className="text-blue-600" aria-hidden="true" />
             تصدير التقرير
           </h3>
-          <button onClick={onClose} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors">
+          <button 
+            onClick={onClose} 
+            className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400"
+            aria-label="إغلاق"
+          >
             <X size={20} />
           </button>
         </div>
@@ -109,7 +118,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
             <p className="text-sm text-blue-800 mb-2 font-bold">معاينة النص (للرسائل):</p>
-            <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700 leading-relaxed bg-white p-3 rounded-lg border border-blue-100 shadow-sm">
+            <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700 leading-relaxed bg-white p-3 rounded-lg border border-blue-100 shadow-sm" tabIndex={0}>
               {reportText}
             </pre>
           </div>

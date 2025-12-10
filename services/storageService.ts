@@ -153,8 +153,23 @@ export const saveDailyLog = async (driverId: string, log: DailyLog) => {
 };
 
 export const createNewDay = async (driverId: string): Promise<DailyLog> => {
-  const today = new Date();
-  const id = today.toISOString().split('T')[0];
+  // EGYPT/CAIRO Time Logic: Day starts at 4:00 AM.
+  // Get current time in Cairo
+  const now = new Date();
+  const cairoString = now.toLocaleString("en-US", { timeZone: "Africa/Cairo" });
+  const cairoDate = new Date(cairoString);
+  
+  // If hour < 4, it belongs to the previous calendar day
+  // e.g., 3 AM on 15th is part of 14th's shift
+  if (cairoDate.getHours() < 4) {
+    cairoDate.setDate(cairoDate.getDate() - 1);
+  }
+
+  // Generate ID based on the logical date (YYYY-MM-DD)
+  const year = cairoDate.getFullYear();
+  const month = String(cairoDate.getMonth() + 1).padStart(2, '0');
+  const day = String(cairoDate.getDate()).padStart(2, '0');
+  const id = `${year}-${month}-${day}`;
   
   // Check if already exists in IDB
   const existingLog = await get('logs', id);
@@ -166,7 +181,7 @@ export const createNewDay = async (driverId: string): Promise<DailyLog> => {
   const newLog: DailyLog = {
     id,
     driverId,
-    date: Date.now(),
+    date: Date.now(), // Actual creation timestamp
     status: DayStatus.OPEN,
     transactions: []
   };

@@ -21,14 +21,23 @@ export const DaySettingsModal: React.FC<DaySettingsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div 
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+        role="dialog"
+        aria-modal="true"
+        aria-label="إعدادات الوردية والملف الشخصي"
+    >
       <div 
         className="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
           <h3 className="text-xl font-bold text-gray-800">الإعدادات والملف الشخصي</h3>
-          <button onClick={onClose} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors">
+          <button 
+            onClick={onClose} 
+            className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400"
+            aria-label="إغلاق"
+          >
             <X size={20} />
           </button>
         </div>
@@ -37,7 +46,7 @@ export const DaySettingsModal: React.FC<DaySettingsModalProps> = ({
           {/* Driver Info */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
             <div className="flex items-center gap-4 mb-3">
-              <div className="bg-blue-100 p-3 rounded-full text-blue-600">
+              <div className="bg-blue-100 p-3 rounded-full text-blue-600" aria-hidden="true">
                 <User size={24} />
               </div>
               <div>
@@ -46,7 +55,7 @@ export const DaySettingsModal: React.FC<DaySettingsModalProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2 text-gray-600 mr-2">
-               <Phone size={16} />
+               <Phone size={16} aria-hidden="true" />
                <span className="font-medium dir-ltr">{driver.mobile}</span>
             </div>
           </div>
@@ -68,12 +77,12 @@ export const DaySettingsModal: React.FC<DaySettingsModalProps> = ({
                 }}
                 className="bg-slate-800 hover:bg-slate-900"
               >
-                <Lock size={20} />
+                <Lock size={20} aria-hidden="true" />
                 تقفيل اليومية نهائياً
               </Button>
             ) : (
               <div className="text-center p-4 bg-gray-50 rounded-xl text-gray-500 font-medium flex items-center justify-center gap-2">
-                <Lock size={16} />
+                <Lock size={16} aria-hidden="true" />
                 هذه اليومية مغلقة
               </div>
             )}
@@ -88,7 +97,7 @@ export const DaySettingsModal: React.FC<DaySettingsModalProps> = ({
         </div>
       </div>
       {/* Backdrop click to close */}
-      <div className="absolute inset-0 -z-10" onClick={onClose}></div>
+      <div className="absolute inset-0 -z-10" onClick={onClose} aria-hidden="true"></div>
     </div>
   );
 };
