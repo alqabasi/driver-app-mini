@@ -1,5 +1,5 @@
 import React from 'react';
-import { DailyLog, TransactionType, Driver } from '../../../types';
+import { DailyLog, TransactionType, Driver, DayStatus } from '../../../types';
 
 interface PrintViewProps {
   log: DailyLog;
@@ -76,8 +76,8 @@ export const PrintView: React.FC<PrintViewProps> = ({ log, driver }) => {
            <div className="flex items-center justify-end">
               <div className="text-center px-6 border-r border-slate-200">
                  <span className="block text-xs font-bold text-slate-500 mb-1">الحالة</span>
-                 <span className={`font-bold ${log.status === 'CLOSED' ? 'text-slate-800' : 'text-emerald-600'}`}>
-                    {log.status === 'CLOSED' ? 'مغلقة (Finalized)' : 'مفتوحة (Open)'}
+                 <span className={`font-bold ${log.status === DayStatus.CLOSED ? 'text-slate-800' : 'text-emerald-600'}`}>
+                    {log.status === DayStatus.CLOSED ? 'مغلقة (Finalized)' : 'مفتوحة (Open)'}
                  </span>
               </div>
               <div className="text-center px-6">

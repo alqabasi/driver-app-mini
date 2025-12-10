@@ -199,9 +199,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await driverApi.openDay();
       await refreshData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to open day", error);
-      alert('حدث خطأ أثناء فتح الوردية.');
+      const errorMessage = error.response?.data?.message;
+      if (errorMessage && (errorMessage.includes("already have an open day") || errorMessage.includes("closed first"))) {
+        await refreshData(); // Ensure UI is in sync
+        throw { code: 'ALREADY_OPEN', message: errorMessage };
+      } else {
+        throw error;
+      }
     }
   };
 

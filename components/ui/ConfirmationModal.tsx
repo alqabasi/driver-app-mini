@@ -11,6 +11,7 @@ interface ConfirmationModalProps {
   confirmText?: string;
   cancelText?: string;
   variant?: 'danger' | 'warning' | 'success' | 'info';
+  showCancel?: boolean;
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -21,7 +22,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   message,
   confirmText = 'نعم، تأكيد',
   cancelText = 'إلغاء',
-  variant = 'danger'
+  variant = 'danger',
+  showCancel = true
 }) => {
   if (!isOpen) return null;
 
@@ -77,20 +79,22 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           {message}
         </p>
 
-        <div className="flex gap-3">
-          <Button 
-            onClick={onClose} 
-            variant="secondary" 
-            fullWidth 
-            className="rounded-xl border-slate-200 py-4"
-          >
-            {cancelText}
-          </Button>
+        <div className={`flex gap-3 ${!showCancel ? 'justify-center' : ''}`}>
+          {showCancel && (
+            <Button 
+              onClick={onClose} 
+              variant="secondary" 
+              fullWidth 
+              className="rounded-xl border-slate-200 py-4"
+            >
+              {cancelText}
+            </Button>
+          )}
           <Button 
             onClick={() => { onConfirm(); onClose(); }} 
             variant={getConfirmVariant()} 
-            fullWidth
-            className="rounded-xl py-4 shadow-lg shadow-opacity-20"
+            fullWidth={showCancel}
+            className={`rounded-xl py-4 shadow-lg shadow-opacity-20 ${!showCancel ? 'w-full' : ''}`}
           >
             {confirmText}
           </Button>

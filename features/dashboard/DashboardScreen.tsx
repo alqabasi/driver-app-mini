@@ -6,10 +6,27 @@ import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
 import { IncomeExpenseChart } from '../../components/ui/IncomeExpenseChart';
 import { DeveloperInfoModal } from '../../components/DeveloperInfoModal';
 
+interface ConfirmConfig {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  confirmText?: string;
+  variant: 'danger' | 'warning' | 'success' | 'info';
+  showCancel?: boolean;
+}
+
 export const DashboardScreen: React.FC = () => {
   const { driver, logs, logout, createDay, selectDay, exportData } = useApp();
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isDevInfoOpen, setIsDevInfoOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    variant: 'danger',
+    showCancel: true
+  });
 
   const reminder = useMemo(() => {
     if (!logs.length) return null;
@@ -64,7 +81,44 @@ export const DashboardScreen: React.FC = () => {
   if (!driver) return null;
 
   const handleLogoutClick = () => {
-    setShowLogoutConfirm(true);
+    setConfirmConfig({
+      isOpen: true,
+      title: 'تسجيل الخروج',
+      message: 'هل أنت متأكد أنك تريد تسجيل الخروج؟ ستحتاج لإدخال بياناتك مرة أخرى للدخول.',
+      variant: 'danger',
+      onConfirm: logout,
+      confirmText: 'خروج',
+      showCancel: true
+    });
+  };
+
+  const handleCreateDay = async () => {
+    try {
+      await createDay();
+    } catch (error: any) {
+      if (error.code === 'ALREADY_OPEN') {
+        setConfirmConfig({
+          isOpen: true,
+          title: 'تنبيه',
+          message: 'يوجد وردية مفتوحة بالفعل. يجب عليك إغلاق الوردية الحالية قبل فتح وردية جديدة.',
+          variant: 'info',
+          confirmText: 'حسناً',
+          showCancel: false,
+          onConfirm: () => {}
+        });
+      } else {
+        // Generic error handler
+        setConfirmConfig({
+          isOpen: true,
+          title: 'خطأ',
+          message: 'حدث خطأ أثناء فتح الوردية. يرجى المحاولة مرة أخرى.',
+          variant: 'danger',
+          confirmText: 'حسناً',
+          showCancel: false,
+          onConfirm: () => {}
+        });
+      }
+    }
   };
 
   const getDaySummary = (log: DailyLog) => {
@@ -127,7 +181,7 @@ export const DashboardScreen: React.FC = () => {
         </div>
 
         <button 
-          onClick={createDay}
+          onClick={handleCreateDay}
           className="w-full bg-slate-900 text-white rounded-[2rem] p-6 shadow-xl shadow-slate-900/20 relative overflow-hidden group active:scale-[0.98] transition-all focus:outline-none focus:ring-4 focus:ring-slate-300"
           aria-label="بدء وردية جديدة"
         >
@@ -250,13 +304,14 @@ export const DashboardScreen: React.FC = () => {
       </div>
 
       <ConfirmationModal
-        isOpen={showLogoutConfirm}
-        onClose={() => setShowLogoutConfirm(false)}
-        onConfirm={logout}
-        title="تسجيل الخروج"
-        message="هل أنت متأكد أنك تريد تسجيل الخروج؟ ستحتاج لإدخال بياناتك مرة أخرى للدخول."
-        confirmText="خروج"
-        variant="danger"
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        variant={confirmConfig.variant}
+        showCancel={confirmConfig.showCancel}
       />
 
       <DeveloperInfoModal 
