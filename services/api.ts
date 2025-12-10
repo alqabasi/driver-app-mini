@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:3000/api/v1";
+// const BASE_URL = "http://localhost:3000/api/v1";
+const BASE_URL = "https://driver-api-mini-production.up.railway.app/api/v1";
 
 const http = axios.create({
   baseURL: BASE_URL,
