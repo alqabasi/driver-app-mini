@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { TransactionType, DayStatus, Transaction } from '../../types';
 import { Button } from '../../components/ui/Button';
@@ -8,9 +8,10 @@ import { ReportModal } from './components/ReportModal';
 import { PrintView } from './components/PrintView';
 import { TransactionActionModal } from './components/TransactionActionModal';
 import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
+import { IncomeExpenseChart } from '../../components/ui/IncomeExpenseChart';
 import { 
   ChevronLeft, Lock, Settings, FileText, ArrowUp, ArrowDown, Share2, Wallet,
-  ArrowUpDown, Filter, Search, X
+  ArrowUpDown, Filter, Search, X, Clock, Timer, AlertCircle
 } from 'lucide-react';
 
 interface ConfirmConfig {
@@ -48,7 +49,77 @@ export const DailyLogScreen: React.FC = () => {
   const [sortBy, setSortBy] = useState<'TIME' | 'AMOUNT'>('TIME');
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
-  
+
+  // Time tracking
+  const [now, setNow] = useState(Date.now());
+
+  // Derive start/end times from the Log ID (Format: YYYY-MM-DD)
+  // Day starts at 04:00 AM of that ID's date and ends at 04:00 AM the next day.
+  const { dayStart, dayEnd, progressPercent, remainingHours } = useMemo(() => {
+    if (!currentLog) return { dayStart: new Date(), dayEnd: new Date(), progressPercent: 0, remainingHours: 0 };
+    
+    // Parse ID YYYY-MM-DD
+    const [year, month, day] = currentLog.id.split('-').map(Number);
+    // Construct start date at 4:00 AM
+    // Note: We assume local device time generally matches user location (Egypt).
+    const start = new Date(year, month - 1, day, 4, 0, 0);
+    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000); // Add 24 hours
+    
+    let percent = 0;
+    const totalDuration = end.getTime() - start.getTime();
+    const elapsed = now - start.getTime();
+    
+    if (now < start.getTime()) {
+      percent = 0;
+    } else if (now > end.getTime()) {
+      percent = 100;
+    } else {
+      percent = (elapsed / totalDuration) * 100;
+    }
+    
+    const remainingMs = end.getTime() - now;
+    const remainingHrs = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60)));
+
+    return { 
+      dayStart: start, 
+      dayEnd: end, 
+      progressPercent: percent,
+      remainingHours: remainingHrs
+    };
+  }, [currentLog, now]);
+
+  const isClosed = currentLog?.status === DayStatus.CLOSED;
+
+  // Auto-close logic check
+  useEffect(() => {
+    if (!currentLog || isClosed) return;
+
+    const checkAutoClose = async () => {
+      // If current time is past the day end (Next day 4 AM), close it.
+      if (now > dayEnd.getTime()) {
+        await closeDay();
+        setConfirmConfig({
+          isOpen: true,
+          title: 'انتهاء اليومية',
+          message: 'تم إغلاق اليومية تلقائياً لانتهاء الوقت المحدد (4:00 ص). يمكنك الآن فتح وردية جديدة.',
+          variant: 'info',
+          confirmText: 'حسناً',
+          onConfirm: () => {}
+        });
+      }
+    };
+
+    checkAutoClose();
+    
+    // Update timer every minute
+    const interval = setInterval(() => {
+      setNow(Date.now());
+      checkAutoClose();
+    }, 60000); 
+
+    return () => clearInterval(interval);
+  }, [currentLog, isClosed, dayEnd, now, closeDay]);
+
   const displayedTransactions = useMemo(() => {
     if (!currentLog) return [];
     
@@ -77,8 +148,6 @@ export const DailyLogScreen: React.FC = () => {
   }, [currentLog?.transactions, filterType, sortBy, searchQuery]);
 
   if (!currentLog || !driver) return null;
-
-  const isClosed = currentLog.status === DayStatus.CLOSED;
 
   const getDaySummary = () => {
     const income = currentLog.transactions.filter(t => t.type === TransactionType.INCOME).reduce((sum, t) => sum + t.amount, 0);
@@ -155,8 +224,8 @@ export const DailyLogScreen: React.FC = () => {
       <PrintView log={currentLog} driver={driver} />
 
       {/* Header Area */}
-      <div className="bg-slate-900 text-white pt-6 pb-20 px-6 rounded-b-[2.5rem] shadow-xl shadow-slate-900/10 relative z-0">
-        <div className="flex items-center justify-between mb-8">
+      <div className="bg-slate-900 text-white pt-6 pb-24 px-6 rounded-b-[2.5rem] shadow-xl shadow-slate-900/10 relative z-0">
+        <div className="flex items-center justify-between mb-6">
           <button 
             onClick={() => selectDay(null)} 
             className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 active:scale-95 transition-all backdrop-blur-md focus:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
@@ -175,7 +244,7 @@ export const DailyLogScreen: React.FC = () => {
             </button>
             <button 
               onClick={() => setIsSettingsOpen(true)}
-              className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 active:scale-95 transition-all backdrop-blur-md focus:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+              className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 active:scale-95 transition-all backdrop-blur-md focus:outline-none focus-visible:ring-4 focus:ring-white/30"
               aria-label="إعدادات اليومية"
             >
               <Settings size={22} />
@@ -184,35 +253,80 @@ export const DailyLogScreen: React.FC = () => {
         </div>
 
         <div className="text-center mb-6">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/5 text-xs font-medium text-slate-300 mb-2 backdrop-blur-md">
-                {isClosed ? <Lock size={10} className="text-red-400" /> : <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
-                {isClosed ? 'اليومية مغلقة' : 'اليومية مفتوحة'}
+            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold mb-3 backdrop-blur-md ${isClosed ? 'bg-red-500/10 border-red-500/20 text-red-200' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'}`}>
+                {isClosed ? <Lock size={10} /> : <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
+                {isClosed ? 'اليومية مغلقة' : 'اليومية جارية'}
             </span>
             <h1 className="text-2xl font-bold mb-1">
                 {new Date(currentLog.date).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}
             </h1>
             <p className="text-slate-400 text-sm">{driver.name}</p>
         </div>
+
+        {/* Day Period Indicator */}
+        <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm mb-2">
+           <div className="flex justify-between items-end mb-2 text-xs font-medium text-slate-400">
+               <span>البداية 04:00 ص</span>
+               <span>النهاية 04:00 ص</span>
+           </div>
+           
+           {/* Progress Bar */}
+           <div className="h-2.5 bg-slate-800 rounded-full w-full overflow-hidden mb-2 relative">
+               <div 
+                  className={`h-full rounded-full transition-all duration-1000 ${
+                    isClosed ? 'bg-slate-600' : (progressPercent > 90 ? 'bg-amber-500' : 'bg-blue-500')
+                  }`}
+                  style={{ width: `${progressPercent}%` }}
+               >
+                 {/* Shimmer effect */}
+                 {!isClosed && (
+                   <div className="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+                 )}
+               </div>
+           </div>
+
+           <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5 text-slate-300">
+                 <Clock size={14} className="text-blue-400" />
+                 <span>
+                    {now < dayStart.getTime() ? 'لم تبدأ بعد' : (
+                      isClosed ? 'انتهت الوردية' : 'الوردية سارية'
+                    )}
+                 </span>
+              </div>
+              {!isClosed && (
+                <div className="flex items-center gap-1.5 font-bold">
+                   <Timer size={14} className={remainingHours < 3 ? "text-amber-400 animate-pulse" : "text-slate-400"} />
+                   <span className={remainingHours < 3 ? "text-amber-400" : "text-slate-400"}>
+                      متبقي {remainingHours} ساعة
+                   </span>
+                </div>
+              )}
+           </div>
+        </div>
       </div>
 
       {/* Summary Floating Card */}
       <div className="px-4 -mt-16 relative z-10 mb-6">
         <div className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white">
-            <div className="flex justify-between items-center divide-x divide-x-reverse divide-gray-100">
+            <div className="flex justify-between items-end divide-x divide-x-reverse divide-gray-100">
                 <div className="flex-1 text-center pl-2">
-                    <span className="block text-gray-500 text-xs font-bold mb-1">الوارد</span>
+                    <span className="block text-gray-500 text-xs font-bold mb-2">الوارد</span>
                     <span className="text-emerald-600 font-bold text-xl block tracking-tight">
                         {summary.income.toLocaleString()}
                     </span>
                 </div>
-                <div className="flex-1 text-center pr-2">
-                    <span className="block text-gray-500 text-xxlarge font-bold mb-1">الصافي</span>
-                    <span className={`font-black text-2xl block tracking-tight ${summary.net >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
+                <div className="flex-1 text-center pr-2 px-2 flex flex-col items-center">
+                    <div className="h-10 mb-2 w-full flex justify-center">
+                        <IncomeExpenseChart income={summary.income} expense={summary.expense} height={40} barWidth="w-3" />
+                    </div>
+                    <span className="block text-gray-500 text-xs font-bold mb-1">الصافي</span>
+                    <span className={`font-black text-2xl block tracking-tight leading-none ${summary.net >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
                         {summary.net.toLocaleString()}
                     </span>
                 </div>
                 <div className="flex-1 text-center px-2">
-                    <span className="block text-gray-500 text-xs font-bold mb-1">المصروف</span>
+                    <span className="block text-gray-500 text-xs font-bold mb-2">المصروف</span>
                     <span className="text-red-500 font-bold text-xl block tracking-tight">
                         {summary.expense.toLocaleString()}
                     </span>

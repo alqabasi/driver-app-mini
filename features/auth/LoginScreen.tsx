@@ -32,7 +32,7 @@ export const LoginScreen: React.FC = () => {
         
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 mr-2">الاسم بالكامل</label>
+            <label className="text-sm font-bold text-slate-700 mr-2">الاسم</label>
             <input 
               type="text" 
               value={loginName}

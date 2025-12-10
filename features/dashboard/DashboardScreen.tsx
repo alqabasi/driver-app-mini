@@ -3,6 +3,7 @@ import { useApp } from '../../contexts/AppContext';
 import { DailyLog, DayStatus, TransactionType } from '../../types';
 import { LogOut, Plus, ArrowRight, Download, FileSpreadsheet, AlertTriangle, Bell } from 'lucide-react';
 import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
+import { IncomeExpenseChart } from '../../components/ui/IncomeExpenseChart';
 
 export const DashboardScreen: React.FC = () => {
   const { driver, logs, logout, createDay, selectDay, exportData } = useApp();
@@ -103,7 +104,7 @@ export const DashboardScreen: React.FC = () => {
         <div className="flex justify-between items-start mb-8">
           <div>
              <span className="text-slate-400 font-bold text-sm mb-1 block">مرحباً بك</span>
-             <h1 className="text-3xl font-black text-slate-900 tracking-tight">كابتن {driver.name.split(' ')[0]} 👋</h1>
+             <h1 className="text-3xl font-black text-slate-900 tracking-tight">استاذ {driver.name.split(' ')[0]} 👋</h1>
           </div>
           <button 
             onClick={handleLogoutClick} 
@@ -126,7 +127,7 @@ export const DashboardScreen: React.FC = () => {
                     <Plus size={32} />
                 </div>
                 <div className="text-right">
-                    <span className="block font-bold text-xl mb-1">وردية فتح</span>
+                    <span className="block font-bold text-xl mb-1">فتح ورديه</span>
                     <span className="text-slate-400 text-sm font-medium">ابدأ تسجيل حسابات اليوم</span>
                 </div>
             </div>
@@ -190,17 +191,17 @@ export const DashboardScreen: React.FC = () => {
             </div>
           ) : (
             logs.map(log => {
-               const { net } = getDaySummary(log);
+               const { income, expense, net } = getDaySummary(log);
                const isClosed = log.status === DayStatus.CLOSED;
                
                return (
                 <button 
                   key={log.id}
                   onClick={() => selectDay(log)}
-                  className="w-full bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100 active:scale-[0.98] transition-all text-right group focus:outline-none focus:ring-4 focus:ring-slate-100"
+                  className="w-full bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100 active:scale-[0.98] transition-all text-right group focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-100"
                   aria-label={`يومية ${new Date(log.date).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}, الحالة ${isClosed ? 'مغلقة' : 'مفتوحة'}, الصافي ${net} جنيه`}
                 >
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
                         <span className="block font-black text-slate-800 text-lg mb-1">
                             {new Date(log.date).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -214,15 +215,20 @@ export const DashboardScreen: React.FC = () => {
                     </span>
                   </div>
                   
-                  <div className="flex justify-between items-end border-t border-gray-50 pt-4">
+                  <div className="flex justify-between items-end border-t border-gray-50 pt-3">
                     <div className="text-gray-400 text-xs font-bold">
                        {log.transactions.length} حركة مسجلة
                     </div>
-                    <div>
-                       <span className="text-gray-400 text-xs font-bold ml-2">الصافي</span>
-                       <span className={`font-black text-xl dir-ltr ${net >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
-                         {net.toLocaleString()} <span className="text-xs">ج.م</span>
-                       </span>
+                    
+                    <div className="flex items-center gap-4 pl-1">
+                       <IncomeExpenseChart income={income} expense={expense} height={24} barWidth="w-2" />
+                       
+                       <div className="text-left">
+                          <span className="block text-gray-400 text-[10px] font-bold">الصافي</span>
+                          <span className={`font-black text-xl dir-ltr leading-none ${net >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
+                            {net.toLocaleString()} <span className="text-[10px] text-gray-400 align-top">ج.م</span>
+                          </span>
+                       </div>
                     </div>
                   </div>
                 </button>
