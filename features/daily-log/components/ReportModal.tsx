@@ -150,9 +150,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({
              <Button onClick={handlePrint} variant="primary" fullWidth className="justify-between py-4">
                 <span className="flex items-center gap-2">
                    <Printer size={20} />
-                   طباعة PDF رسمي
+                   تصدير ملف PDF رسمي
                 </span>
-                <span className="text-xs font-normal opacity-70 bg-white/10 px-2 py-1 rounded">للحفظ والمشاركة</span>
+                <span className="text-xs font-normal opacity-70 bg-white/10 px-2 py-1 rounded">للطباعة والحفظ</span>
              </Button>
           </div>
         </div>

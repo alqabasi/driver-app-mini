@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { DailyLog, DayStatus, TransactionType } from '../../types';
-import { LogOut, Plus, ArrowRight, Download, FileSpreadsheet, AlertTriangle, Bell } from 'lucide-react';
+import { LogOut, Plus, ArrowRight, Download, FileSpreadsheet, AlertTriangle, Bell, Info } from 'lucide-react';
 import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
 import { IncomeExpenseChart } from '../../components/ui/IncomeExpenseChart';
+import { DeveloperInfoModal } from '../../components/DeveloperInfoModal';
 
 export const DashboardScreen: React.FC = () => {
   const { driver, logs, logout, createDay, selectDay, exportData } = useApp();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isDevInfoOpen, setIsDevInfoOpen] = useState(false);
 
   const reminder = useMemo(() => {
     if (!logs.length) return null;
@@ -106,13 +108,22 @@ export const DashboardScreen: React.FC = () => {
              <span className="text-slate-400 font-bold text-sm mb-1 block">مرحباً بك</span>
              <h1 className="text-3xl font-black text-slate-900 tracking-tight">استاذ {driver.name.split(' ')[0]} 👋</h1>
           </div>
-          <button 
-            onClick={handleLogoutClick} 
-            className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-colors focus:outline-none focus:ring-4 focus:ring-red-100"
-            aria-label="تسجيل الخروج"
-          >
-            <LogOut size={22} />
-          </button>
+          <div className="flex gap-2">
+             <button 
+                onClick={() => setIsDevInfoOpen(true)}
+                className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 transition-colors focus:outline-none focus:ring-4 focus:ring-blue-100"
+                aria-label="معلومات المطور"
+             >
+                <Info size={22} />
+             </button>
+             <button 
+                onClick={handleLogoutClick} 
+                className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-colors focus:outline-none focus:ring-4 focus:ring-red-100"
+                aria-label="تسجيل الخروج"
+             >
+                <LogOut size={22} />
+             </button>
+          </div>
         </div>
 
         <button 
@@ -246,6 +257,11 @@ export const DashboardScreen: React.FC = () => {
         message="هل أنت متأكد أنك تريد تسجيل الخروج؟ ستحتاج لإدخال بياناتك مرة أخرى للدخول."
         confirmText="خروج"
         variant="danger"
+      />
+
+      <DeveloperInfoModal 
+        isOpen={isDevInfoOpen} 
+        onClose={() => setIsDevInfoOpen(false)} 
       />
     </div>
   );
